@@ -1,0 +1,114 @@
+-- LOW GRAPHICS + HIDE LOCAL CHARACTER
+-- LocalScript: StarterPlayer > StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+
+-- =========================
+-- GIẢM ĐỒ HỌA
+-- =========================
+
+pcall(function()
+	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+end)
+
+-- Tắt các hiệu ứng ánh sáng
+Lighting.GlobalShadows = false
+Lighting.Brightness = 1
+Lighting.EnvironmentDiffuseScale = 0
+Lighting.EnvironmentSpecularScale = 0
+Lighting.FogEnd = 100000
+
+-- Xóa/tắt hiệu ứng hậu kỳ
+for _, obj in ipairs(Lighting:GetChildren()) do
+	if obj:IsA("PostEffect")
+		or obj:IsA("Atmosphere")
+		or obj:IsA("Clouds") then
+		obj.Enabled = false
+	end
+end
+
+-- =========================
+-- GIẢM CHI TIẾT MAP
+-- =========================
+
+local function optimize(obj)
+	if obj:IsA("ParticleEmitter")
+		or obj:IsA("Trail")
+		or obj:IsA("Beam")
+		or obj:IsA("Smoke")
+		or obj:IsA("Fire")
+		or obj:IsA("Sparkles") then
+
+		obj.Enabled = false
+
+	elseif obj:IsA("BasePart") then
+		obj.CastShadow = false
+		obj.Material = Enum.Material.SmoothPlastic
+
+	elseif obj:IsA("Decal")
+		or obj:IsA("Texture") then
+		obj.Transparency = 1
+	end
+end
+
+for _, obj in ipairs(Workspace:GetDescendants()) do
+	pcall(optimize, obj)
+end
+
+Workspace.DescendantAdded:Connect(function(obj)
+	task.defer(function()
+		pcall(optimize, obj)
+	end)
+end)
+
+-- =========================
+-- ẨN NHÂN VẬT CỦA MÌNH
+-- =========================
+
+local function hideCharacter(character)
+	for _, obj in ipairs(character:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			obj.LocalTransparencyModifier = 1
+			obj.CastShadow = false
+
+		elseif obj:IsA("Decal")
+			or obj:IsA("Texture") then
+			obj.Transparency = 1
+
+		elseif obj:IsA("ParticleEmitter")
+			or obj:IsA("Trail")
+			or obj:IsA("Beam") then
+			obj.Enabled = false
+		end
+	end
+end
+
+local function onCharacter(character)
+	task.wait(0.2)
+	hideCharacter(character)
+
+	character.DescendantAdded:Connect(function(obj)
+		task.defer(function()
+			if obj:IsA("BasePart") then
+				obj.LocalTransparencyModifier = 1
+				obj.CastShadow = false
+			elseif obj:IsA("Decal") or obj:IsA("Texture") then
+				obj.Transparency = 1
+			elseif obj:IsA("ParticleEmitter")
+				or obj:IsA("Trail")
+				or obj:IsA("Beam") then
+				obj.Enabled = false
+			end
+		end)
+	end)
+end
+
+if player.Character then
+	onCharacter(player.Character)
+end
+
+player.CharacterAdded:Connect(onCharacter)
